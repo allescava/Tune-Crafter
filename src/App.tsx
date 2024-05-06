@@ -8,6 +8,9 @@ import AudioWaveComponent from "./components/AudioWaveComponent";
 import SpeechComponent from "./components/SpeechComponent";
 import SideBar from "./components/SideBar";
 import { AudioManager } from "./AudioManager";
+import RecordingButton from "./components/RecordingButton";
+import RecordingsListModel from "./models/RecordingsListModel";
+import RecordingModel from "./models/RecordingModel";
 
 function App() {
   let audioUrl = "assets/sounds/audio.mp3"
@@ -16,7 +19,7 @@ function App() {
   // Check if the browser supports the WebSpeech API
 
   const soundManager: AudioManager = new AudioManager(waveformRef.current);
-  
+
   useEffect(() => {
     if (hasGetUserMedia()) {
       enableCam();
@@ -42,6 +45,20 @@ function App() {
     return /Safari/i.test(userAgent) && !/Chrome|CriOS|FxiOS|Edg/i.test(userAgent);
   }
 
+  /*Recording features */
+
+  let recordingsList = new RecordingsListModel();
+  const [newSound, setNewSound] = useState<string>("");
+
+  const resetRecording = () => {
+    recordingsList.clearRecordingList();
+  };
+
+  const addNewRecording = (sound: string) => {
+    // recordingsList.addRecording(new RecordingModel(sound));
+    setNewSound(sound);
+  }
+
 
   return (
     <>
@@ -58,7 +75,7 @@ function App() {
             <div className="row">
               <div className="col">
                 {video && (
-                  <GestureComponent video={video} waveform={waveformRef.current} soundManager={soundManager}></GestureComponent>
+                  <GestureComponent video={video} waveform={waveformRef.current} soundManager={soundManager} addRecording={addNewRecording}></GestureComponent>
                 )}
               </div>
               <div className="col" style={{ position: "relative" }}>
@@ -70,6 +87,11 @@ function App() {
               </div>
               <div className="col">
                 <SpeechComponent waveform={waveformRef.current} soundManager={soundManager}></SpeechComponent>
+              </div>
+            </div>
+            <div className="row text-center position-relative">
+              <div className="col text-center">
+                <RecordingButton />
               </div>
             </div>
           </div>

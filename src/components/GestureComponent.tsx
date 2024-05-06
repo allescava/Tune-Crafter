@@ -17,7 +17,8 @@ export interface Coordinates {
 interface GestureComponentProps {
     video: HTMLVideoElement | null,
     waveform: WaveSurfer | null,
-    soundManager: AudioManager
+    soundManager: AudioManager,
+    addRecording: (sound: string) => void
 }
 
 const GestureComponent = (props: GestureComponentProps) => {
@@ -25,6 +26,7 @@ const GestureComponent = (props: GestureComponentProps) => {
     var video = props.video;
     var waveform = props.waveform;
     var soundManager = props.soundManager;
+    var addRecording = props.addRecording;
     var gestureRecognizer: GestureRecognizer | null = null;
 
     var canvasElement: any | null = null;
@@ -33,7 +35,7 @@ const GestureComponent = (props: GestureComponentProps) => {
     const videoHeight = "100vh";
     const videoWidth = "auto";
     var volumeTimer: any = null;
-    
+
     const model: GestureModel = new GestureModel(soundManager);
 
     const [volume, setVolume] = useState<number>(50);
@@ -249,6 +251,7 @@ const GestureComponent = (props: GestureComponentProps) => {
                     label: sound,
                 });
                 soundManager.playSound(sound);
+                addRecording(sound);
                 let current_gesture = document.getElementById('current_gesture') as HTMLOutputElement;
                 current_gesture.innerText = "🥁 ✅";
             }
