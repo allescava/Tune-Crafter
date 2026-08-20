@@ -1,116 +1,84 @@
-import React, { useState, useRef, useEffect } from "react";
-import RecordingsListModel from "../models/RecordingsListModel";
-import RecordingModel from "../models/RecordingModel";
+import React, { useState, useEffect, useRef } from 'react';
 
+const RecordingButton: React.FC = () => {
+    const [isActive, setIsActive] = useState(false);
+    const [chartItems, setChartItems] = useState<number[]>([]);
+    const chartIndex = useRef(0); // Ref to keep track of the index for looping
 
+    let interval: NodeJS.Timeout | null = null;
+    const [currentTime, setCurrentTime] = useState<number | null>(null); // State to hold the current time
 
-const RecordingButton = () => {
-    const [isRecording, setIsRecording] = useState(false);
-    const [isLooping, setIsLooping] = useState(false);
-    const [time, setTime] = useState(0);
-    let timeInterval: any = useRef(null);
-
-    const [recordsList, setRecordingList] = useState(new RecordingsListModel());
-    const [indexPlayingSound, setIndexPlayingSound] = useState(0);
-
-    const toggleRecording = () => {
-        if (!isRecording) {
-            reset();
-            timeInterval.current = setInterval(() => { setTime(prev => prev + 1); }, 10);
+    useEffect(() => {
+        if (isActive) {
+            interval = setInterval(() => {
+                console.log('Current time: ' + currentTime);
+                setCurrentTime(prevTime => (prevTime === null ? 0 : prevTime + 100)); // Increment by 100 milliseconds
+            }, 100); // Update every 100 milliseconds
         } else {
-            clearInterval(timeInterval.current);
-            recordsList.addRecording(new RecordingModel('end', time));
-            setRecordingList(recordsList);
-            console.log(recordsList);
+            clearInterval(interval!);
         }
-        setIsRecording(!isRecording);
+
+        return () => clearInterval(interval!);
+    }, [isActive]);
+
+    const toggleTimer = () => {
+        setIsActive(!isActive);
     };
 
-    const reset = () => {
-        setTime(0);
-        clearInterval(timeInterval.current);
-        recordsList.clearRecordingList();
+    const resetTimer = () => {
+        setCurrentTime(null);
+        setIsActive(false);
     };
 
-    const formatTime = (time: number) => {
-        const minutes = Math.floor(time / 60000)
-            .toString()
-            .padStart(2, "0");
-        const seconds = Math.floor((time / 100) % 60)
-            .toString()
-            .padStart(2, "0");
-        const milliseconds = (time % 100).toString().padStart(2, "0");
-
-        return { minutes, seconds, milliseconds };
+    const addItemToChart = () => {
+        setChartItems(prevItems => [...prevItems, currentTime !== null ? currentTime : 0]); // Add current time or 0 if null
     };
 
+    const loopRecording = () => {
+        setCurrentTime(null); // Reset the current time
+        if (chartItems.length === 0) return;
 
-    const addRecord = () => {
-        if (isRecording) {
-            recordsList.addRecording(new RecordingModel("clap", time))
-            setRecordingList(recordsList);
-            console.log(recordsList);
-        }
-    }
+        // setIsActive(true); // Start the timer
+        chartIndex.current = 0; // Reset the index for looping
+        console.log('Looping recording... ' + chartItems.length + ' items ' + chartItems.join(', ') + ' milliseconds');
 
-    useEffect(() => { }, [time]);
-
-    const loop = () => {
-        setIsLooping(true);
-        setTime(0);
-        clearInterval(timeInterval.current);
-        console.log(recordsList);
-        let index = 0;
-        timeInterval.current = setInterval(() => {
-            setTime(prev => prev + 1);
-            let timeToCheck = recordsList.recordingAt(index)?.time;
-            console.log("Index Playing sound: " + index);
-            console.log("Times: " + time + " and " + timeToCheck);
-            let p = document.getElementById("sounds");
-            if (timeToCheck && time >= timeToCheck) {
-                if (recordsList.recordingAt(index)?.sound == 'end') {
-                    setIndexPlayingSound(0);
-                    setTime(0);
-                    if (p) {
-                        p.innerHTML = "";
+        interval = setInterval(() => {
+            if (chartIndex.current < chartItems.length) {
+                // Check if the current time matches the recorded time
+                setCurrentTime(prevTime => {
+                    prevTime = prevTime === null ? 0 : prevTime + 100;
+                    console.log('Current time: ' + prevTime + ' ms, Chart time: ' + chartItems[chartIndex.current] + ' ms');
+                    if (prevTime !== null && prevTime >= chartItems[chartIndex.current]) {
+                        console.log(currentTime); // Print the time on the console
+                        chartIndex.current++; // Move to the next recorded time
                     }
-                } else {
-                    let { minutes, seconds, milliseconds } = formatTime(time);
-                    if (p) {
-                        p.innerHTML += "<br>" + { minutes } + ":" + { seconds } + ":" + { milliseconds } + ": " + recordsList.recordingAt(indexPlayingSound)?.sound;
-                    }
-                    index++;
-                }
+                    return prevTime;
+                }); // Increment by 100 milliseconds
+            } else {
+                // If all clicks are replayed, reset the timer and start looping again
+                clearInterval(interval!);
+                setCurrentTime(0);
+                setIsActive(false);
+                setTimeout(loopRecording, 1000); // Wait 1 second before starting the loop again
             }
-        }, 10);
-    }
-
-    const stopLoop = () => {
-        setIsLooping(false);
-        setTime(0);
-        clearInterval(timeInterval.current);
-    }
-
-    const { minutes, seconds, milliseconds } = formatTime(time);
+        }, 100);
+    };
 
     return (
-        <div className="recordingButton">
-            <div className="col">
-                <button className={"btn " + (isRecording ? "btn-danger" : "btn-primary")} onClick={toggleRecording}>
-                    {isRecording ? "Stop Recording" : "Start Recording"}
-                </button>
-                <button className={"btn " + (isRecording ? "btn-info" : "btn-secondary")} onClick={addRecord}>Add Sound</button>
+        <div>
+            <h1>Timer: {currentTime !== null ? currentTime + ' milliseconds' : '0 milliseconds'}</h1>
+            <button onClick={toggleTimer}>{isActive ? 'Pause' : 'Start'}</button>
+            <button onClick={resetTimer}>Reset</button>
+            <button onClick={addItemToChart}>Add to Chart</button>
+            <button onClick={loopRecording}>Loop</button>
+            <div>
+                <h2>Chart Items:</h2>
+                <ul>
+                    {chartItems.map((item, index) => (
+                        <li key={index}>{item} milliseconds</li>
+                    ))}
+                </ul>
             </div>
-            <div className="col">
-                {!isRecording && !recordsList.isEmpty() ? <button className="btn btn-success" onClick={loop}>Loop</button> : ""}
-                {isLooping ? <button className="btn btn-danger" onClick={stopLoop}>Stop Loop</button> : ""}
-            </div>
-            <p className="text-white">
-                {minutes}:
-                {seconds}:
-                {milliseconds}
-            </p>
-            <p id="sounds"></p>
         </div>
     );
 };

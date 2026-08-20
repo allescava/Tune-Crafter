@@ -39,6 +39,13 @@ html {
   /* 100% of the viewport height */
   width: 100vw;
   /* 100% of the viewport width */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.main-cont > .row {
+  width: 100%;
 }
 
 .waveForm {

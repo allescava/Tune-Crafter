@@ -83,6 +83,7 @@ class SideBar extends Component {
                         <li>Right Hand 👍 + Rotate: control speed</li>
                         <li>Right Hand 👆 + ↔️: Volume control</li>
                         <li>Left Hand 🖐️ + 👌 with every finger: play the drum</li>
+                        <li>Keyboard: N/B/V/C keys also play the drum (index/middle/ring/pinky)</li>
                         <li>Left Hand ✌️ + 🤞: Start a loop</li>
                         <li>Right Hand ✌️ + 🤞: Close a loop</li>
                         <li>Left Hand ✌️: To remove a loop</li>

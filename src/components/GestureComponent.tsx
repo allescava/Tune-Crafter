@@ -7,6 +7,7 @@ import { GestureRecognizer, FilesetResolver, DrawingUtils } from '../../node_mod
 import WaveSurfer from "wavesurfer.js";
 import { GestureModel } from "../models/GestureModel";
 import { AudioManager } from "../AudioManager";
+import { MetronomeManager } from "../MetronomeManager";
 import VolumeProgressBar from "./VolumeProgressBar";
 
 export interface Coordinates {
@@ -18,7 +19,7 @@ interface GestureComponentProps {
     video: HTMLVideoElement | null,
     waveform: WaveSurfer | null,
     soundManager: AudioManager,
-    addRecording: (sound: string) => void
+    metronomeManager?: MetronomeManager,
 }
 
 const GestureComponent = (props: GestureComponentProps) => {
@@ -26,7 +27,7 @@ const GestureComponent = (props: GestureComponentProps) => {
     var video = props.video;
     var waveform = props.waveform;
     var soundManager = props.soundManager;
-    var addRecording = props.addRecording;
+    var metronomeManager = props.metronomeManager;
     var gestureRecognizer: GestureRecognizer | null = null;
 
     var canvasElement: any | null = null;
@@ -54,6 +55,33 @@ const GestureComponent = (props: GestureComponentProps) => {
             setAudioObjects();
         }
     }, [video, waveform]);
+
+    // Keyboard shortcuts mirroring the left-hand drum gestures (n=index, b=middle, v=ring, c=pinky)
+    useEffect(() => {
+        const keyToSound: { [key: string]: string } = {
+            n: "index",
+            b: "middle",
+            v: "ring",
+            c: "pinky",
+        };
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.repeat) {
+                return;
+            }
+            const sound = keyToSound[event.key.toLowerCase()];
+            if (!sound) {
+                return;
+            }
+            soundManager.playSound(sound);
+            metronomeManager?.registerHit(sound);
+            let current_gesture = document.getElementById('current_gesture') as HTMLOutputElement;
+            if (current_gesture) {
+                current_gesture.innerText = "⌨️ ✅";
+            }
+        };
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [soundManager, metronomeManager]);
 
     /**
      * Function to create the gestureRecognizer and initialization of the regions (used to create loops in the music flow)
@@ -251,7 +279,7 @@ const GestureComponent = (props: GestureComponentProps) => {
                     label: sound,
                 });
                 soundManager.playSound(sound);
-                addRecording(sound);
+                metronomeManager?.registerHit(sound);
                 let current_gesture = document.getElementById('current_gesture') as HTMLOutputElement;
                 current_gesture.innerText = "🥁 ✅";
             }
